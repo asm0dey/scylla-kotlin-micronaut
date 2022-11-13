@@ -1,0 +1,6 @@
+applicationType: default
+defaultPackage: com.github.asm0dey
+testFramework: kotest
+sourceLanguage: kotlin
+buildTool: gradle_kotlin
+features: [annotation-api, app-name, gradle, hibernate-validator, http-client, jackson-databind, kotest, kotlin, kotlin-application, kotlin-build, logback, micronaut-build, netty-server, openapi, readme, shade, yaml]

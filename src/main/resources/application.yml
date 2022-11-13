@@ -1,0 +1,12 @@
+micronaut:
+  application:
+    name: demo
+  router:
+    static-resources:
+      swagger:
+        paths: classpath:META-INF/swagger
+        mapping: /swagger/**
+netty:
+  default:
+    allocator:
+      max-order: 3

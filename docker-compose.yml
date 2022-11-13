@@ -1,0 +1,78 @@
+version: '3.3'
+
+services:
+  carepet-scylla1:
+    image: scylladb/scylla
+    container_name: carepet-scylla1
+    command: --smp 1
+    environment:
+      - "SCYLLA_JMX_ADDR=-ja 0.0.0.0"
+      - "SCYLLA_JMX_REMOTE=-r"
+    expose:
+      - "7199"
+    ports:
+      - "127.0.0.4:9042:9042"
+
+  carepet-scylla2:
+    image: scylladb/scylla
+    container_name: carepet-scylla2
+    command: --smp 1 --seeds=carepet-scylla1
+    environment:
+      - "SCYLLA_JMX_ADDR=-ja 0.0.0.0"
+      - "SCYLLA_JMX_REMOTE=-r"
+    expose:
+      - "7199"
+    ports:
+      - "127.0.0.5:9042:9042"
+
+  carepet-scylla3:
+    image: scylladb/scylla
+    container_name: carepet-scylla3
+    command: --smp 1 --seeds=carepet-scylla1
+    environment:
+      - "SCYLLA_JMX_ADDR=-ja 0.0.0.0"
+      - "SCYLLA_JMX_REMOTE=-r"
+    expose:
+      - "7199"
+    ports:
+      - "127.0.0.6:9042:9042"
+
+  migrate:
+    build:
+      dockerfile: src/main/docker/Dockerfile
+    links:
+      - carepet-scylla1
+      - carepet-scylla2
+      - carepet-scylla3
+    command: sh -c "/wait && java -cp /app/demo.jar com.carepet.MigrateKt --hosts carepet-scylla1 --hosts carepet-scylla2 --hosts carepet-scylla3 -dc datacenter1"
+    environment:
+      WAIT_HOSTS: carepet-scylla1:9042,carepet-scylla2:9042,carepet-scylla3:9042
+      WAIT_TIMEOUT: 180
+
+  sensor:
+    build:
+      dockerfile: src/main/docker/Dockerfile
+    links:
+      - carepet-scylla1
+      - carepet-scylla2
+      - carepet-scylla3
+    command: sh -c "/wait && java -cp /app/demo.jar com.carepet.SensorKt --hosts carepet-scylla1 --hosts carepet-scylla2 --hosts carepet-scylla3 -dc datacenter1"
+    environment:
+      WAIT_HOSTS: carepet-scylla1:9042,carepet-scylla2:9042,carepet-scylla3:9042
+      WAIT_TIMEOUT: 180
+      WAIT_AFTER: 20
+
+  app:
+    build:
+      dockerfile: src/main/docker/Dockerfile
+    links:
+      - carepet-scylla1
+      - carepet-scylla2
+      - carepet-scylla3
+    command: sh -c "/wait && java -cp /app/demo.jar com.carepet.server.AppKt --hosts carepet-scylla1 --hosts carepet-scylla2 --hosts carepet-scylla3 -dc datacenter1"
+    environment:
+      WAIT_HOSTS: carepet-scylla1:9042,carepet-scylla2:9042,carepet-scylla3:9042
+      WAIT_TIMEOUT: 180
+      WAIT_AFTER: 20
+    ports:
+      - "8080:8080"
